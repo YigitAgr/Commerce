@@ -1,5 +1,9 @@
 package com.example.commerce.service;
 
+import com.example.commerce.dto.CartDto;
+import com.example.commerce.dto.CartItemDto;
+import com.example.commerce.dto.OrderDto;
+import com.example.commerce.dto.OrderItemDto;
 import com.example.commerce.model.*;
 import com.example.commerce.repository.CartRepository;
 import com.example.commerce.repository.CustomerRepository;
@@ -13,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class CartService {
@@ -29,7 +34,7 @@ public class CartService {
     @Autowired
     private OrderRepository orderRepository;
 
-    public Cart addProductToCart(Long customerId, Long productId, int quantity) {
+    public CartDto addProductToCart(Long customerId, Long productId, int quantity) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         Optional<Product> productOpt = productRepository.findById(productId);
 
@@ -58,10 +63,12 @@ public class CartService {
                 .sum());
 
         cartRepository.save(cart);
-        return cart;
+
+        // Convert the Cart entity to a DTO and return
+        return convertCartToDto(cart);
     }
 
-    public Cart deleteProductFromCart(Long customerId, Long productId) {
+    public CartDto deleteProductFromCart(Long customerId, Long productId) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         if (customerOpt.isEmpty()) {
             throw new IllegalArgumentException("Customer not found.");
@@ -81,10 +88,12 @@ public class CartService {
                 .sum());
 
         cartRepository.save(cart);
-        return cart;
+
+        // Convert the Cart entity to a DTO and return
+        return convertCartToDto(cart);
     }
 
-    public Cart updateCart(Long customerId, Long productId, int quantity) {
+    public CartDto updateCart(Long customerId, Long productId, int quantity) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         Optional<Product> productOpt = productRepository.findById(productId);
 
@@ -113,10 +122,12 @@ public class CartService {
                 .sum());
 
         cartRepository.save(cart);
-        return cart;
+
+        // Convert the Cart entity to a DTO and return
+        return convertCartToDto(cart);
     }
 
-    public Cart emptyCart(Long customerId) {
+    public CartDto emptyCart(Long customerId) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         if (customerOpt.isEmpty()) {
             throw new IllegalArgumentException("Customer not found.");
@@ -132,13 +143,14 @@ public class CartService {
         cart.getItems().clear();
         cart.setTotalPrice(0.0);
 
-
         cartRepository.save(cart);
-        return cart;
+
+        // Convert the Cart entity to a DTO and return
+        return convertCartToDto(cart);
     }
 
     @Transactional
-    public Order placeOrder(Long customerId) {
+    public OrderDto placeOrder(Long customerId) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         if (customerOpt.isEmpty()) {
             throw new IllegalArgumentException("Customer not found.");
@@ -168,7 +180,6 @@ public class CartService {
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
             orderItem.setQuantity(quantityToOrder);
-
             orderItem.setPriceAtTimeOfPurchase(cartItem.getPriceAtTimeOfAdd());
             product.setStock(product.getStock() - quantityToOrder);
             orderItems.add(orderItem);
@@ -182,16 +193,34 @@ public class CartService {
 
         orderRepository.save(order);
 
-
+        // Clear cart after placing the order
         cart.getItems().clear();
         cart.setTotalPrice(0.0);
         cartRepository.save(cart);
 
-        return order;
+        // Map Order to OrderDto
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(order.getId());
+        orderDto.setCustomerId(order.getCustomer().getId()); // Assuming Customer has getId() method
+        orderDto.setStatus(order.getOrderStatus());
+        orderDto.setTotalPrice(order.getTotalPrice());
+
+        // Map OrderItems to OrderItemDto
+        Set<OrderItemDto> orderItemDtos = order.getItems().stream().map(orderItem -> {
+            OrderItemDto itemDto = new OrderItemDto();
+            itemDto.setProductId(orderItem.getProduct().getId());
+            itemDto.setQuantity(orderItem.getQuantity());
+            itemDto.setPriceAtTimeOfPurchase(orderItem.getPriceAtTimeOfPurchase());
+            return itemDto;
+        }).collect(Collectors.toSet());
+
+        orderDto.setItems(orderItemDtos);
+
+        return orderDto;
     }
 
 
-    public Cart getCartByCustomerId(Long customerId) {
+    public CartDto getCartByCustomerId(Long customerId) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         if (customerOpt.isEmpty()) {
             throw new IllegalArgumentException("Customer not found.");
@@ -204,34 +233,72 @@ public class CartService {
             throw new IllegalArgumentException("Cart not found for customer.");
         }
 
-        return cart;
+        return convertCartToDto(cart);
     }
 
+    // Utility method to convert Cart entity to CartDto
+    private CartDto convertCartToDto(Cart cart) {
+        CartDto cartDto = new CartDto();
+        cartDto.setId(cart.getId());
+        cartDto.setCustomerId(cart.getCustomer().getId());
+        cartDto.setTotalPrice(cart.getTotalPrice());
 
-    public List<Order> getOrderHistory(Long customerId) {
-        Optional<Customer> customerOpt = customerRepository.findById(customerId);
-        if (customerOpt.isEmpty()) {
-            throw new IllegalArgumentException("Customer not found.");
+        Set<CartItemDto> itemDtos = new HashSet<>();
+        for (CartItem cartItem : cart.getItems()) {
+            CartItemDto itemDto = new CartItemDto();
+            itemDto.setProductId(cartItem.getProduct().getId());
+            itemDto.setQuantity(cartItem.getQuantity());
+            itemDto.setPriceAtTimeOfAdd(cartItem.getPriceAtTimeOfAdd());
+            itemDtos.add(itemDto);
         }
 
-        Customer customer = customerOpt.get();
+        cartDto.setItems(itemDtos);
+        return cartDto;
+    }
 
+    // Get order history for a customer (returns List<OrderDto>)
+    public List<OrderDto> getOrderHistory(Long customerId) {
+        // Fetch orders for the customer
         List<Order> orders = orderRepository.findByCustomerId(customerId);
 
-        if (orders.isEmpty()) {
-            throw new IllegalArgumentException("No orders found for customer with ID: " + customerId);
-        }
-
-        return orders;
+        // Map orders to OrderDto
+        return orders.stream().map(order -> {
+            OrderDto orderDto = new OrderDto();
+            orderDto.setId(order.getId());
+            orderDto.setOrderDate(order.getOrderDate());  // Order date mapping
+            orderDto.setTotalPrice(order.getTotalPrice());  // Total price mapping
+            orderDto.setStatus(order.getOrderStatus());  // Order status mapping
+            // Optionally, map other fields like items, etc.
+            return orderDto;
+        }).collect(Collectors.toList());
     }
 
+    public OrderDto getOrderById(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-    public Order getOrderById(Long orderId) {
-        Optional<Order> orderOpt = orderRepository.findById(orderId);
-        if (orderOpt.isEmpty()) {
-            throw new IllegalArgumentException("Order not found for ID: " + orderId);
+        // Map Order entity to OrderDto
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(order.getId());
+        orderDto.setCustomerId(order.getCustomer().getId());  // Assuming Customer has getId() method
+        orderDto.setOrderStatus(order.getOrderStatus());  // Ensure 'orderStatus' is present in both Order and OrderDto
+        orderDto.setTotalPrice(order.getTotalPrice());  // Mapping total price
+        orderDto.setOrderDate(order.getOrderDate());  // Mapping orderDate
+
+        // Map OrderItems to OrderItemDto
+        Set<OrderItemDto> orderItemDtos = new HashSet<>();
+        for (OrderItem orderItem : order.getItems()) {
+            OrderItemDto orderItemDto = new OrderItemDto();
+            orderItemDto.setProductId(orderItem.getProduct().getId());  // Assuming OrderItem has Product with getId()
+            orderItemDto.setQuantity(orderItem.getQuantity());
+            orderItemDto.setPriceAtTimeOfPurchase(orderItem.getPriceAtTimeOfPurchase());
+
+            orderItemDtos.add(orderItemDto);
         }
-        return orderOpt.get();
+
+        orderDto.setItems(orderItemDtos);
+
+        return orderDto;
     }
 
 }

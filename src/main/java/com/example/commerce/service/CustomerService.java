@@ -1,5 +1,6 @@
 package com.example.commerce.service;
 
+import com.example.commerce.dto.CustomerDto;
 import com.example.commerce.model.Cart;
 import com.example.commerce.model.Customer;
 import com.example.commerce.repository.CustomerRepository;
@@ -23,19 +24,39 @@ public class CustomerService {
     }
 
     @Transactional
-    public Customer addCustomer(Customer customer) {
+    // Add a new customer
+    public CustomerDto addCustomer(CustomerDto customerDto) {
+        // Convert CustomerDto to Customer entity
+        Customer customer = new Customer();
+        customer.setName(customerDto.getName());
+        customer.setEmail(customerDto.getEmail());
+        // Add other fields as needed
 
+        // Save the customer to the database
         Customer savedCustomer = customerRepository.save(customer);
-        Cart cart = new Cart();
-        cart.setCustomer(savedCustomer);
-        cartRepository.save(cart);
-        savedCustomer.setCart(cart);
 
-        return savedCustomer;
+        // Convert saved Customer entity back to CustomerDto
+        CustomerDto savedCustomerDto = new CustomerDto();
+        savedCustomerDto.setId(savedCustomer.getId());
+        savedCustomerDto.setName(savedCustomer.getName());
+        savedCustomerDto.setEmail(savedCustomer.getEmail());
+
+        return savedCustomerDto;
     }
 
+    public List<CustomerDto> getAllCustomers() {
+        List<Customer> customers = customerRepository.findAll();
+        return customers.stream()
+                .map(this::convertCustomerToDto)
+                .toList();
+    }
 
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    // Utility method to convert Customer entity to CustomerDto
+    private CustomerDto convertCustomerToDto(Customer customer) {
+        CustomerDto customerDto = new CustomerDto();
+        customerDto.setId(customer.getId());
+        customerDto.setName(customer.getName());
+        customerDto.setEmail(customer.getEmail());
+        return customerDto;
     }
 }

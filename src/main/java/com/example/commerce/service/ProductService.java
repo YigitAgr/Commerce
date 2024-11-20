@@ -1,5 +1,6 @@
 package com.example.commerce.service;
 
+import com.example.commerce.dto.ProductDto;
 import com.example.commerce.model.Product;
 import com.example.commerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,34 +20,46 @@ public class ProductService {
     }
 
     // Add a new product
-    public Product addProduct(Product product) {
-        return productRepository.save(product);
+    public ProductDto addProduct(ProductDto productDto) {
+        Product product = new Product();
+        product.setName(productDto.getName());
+        product.setPrice(productDto.getPrice());
+        product.setStock(productDto.getStock());
+        productRepository.save(product);
+
+        // Return the saved product as a DTO
+        return convertProductToDto(product);
     }
 
     // Get a product by ID
-    public Product getProduct(Long productId) {
+    public ProductDto getProduct(Long productId) {
         Optional<Product> product = productRepository.findById(productId);
         if (product.isPresent()) {
-            return product.get();
+            return convertProductToDto(product.get());
         }
         throw new RuntimeException("Product not found with id " + productId);
     }
 
     // Get all products
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<ProductDto> getAllProducts() {
+        List<Product> products = productRepository.findAll();
+        return products.stream()
+                .map(this::convertProductToDto)
+                .toList();
     }
 
     // Update an existing product
-    public Product updateProduct(Long productId, Product productDetails) {
+    public ProductDto updateProduct(Long productId, ProductDto productDto) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id " + productId));
 
-        product.setName(productDetails.getName());
-        product.setPrice(productDetails.getPrice());
-        product.setStock(productDetails.getStock());
+        product.setName(productDto.getName());
+        product.setPrice(productDto.getPrice());
+        product.setStock(productDto.getStock());
 
-        return productRepository.save(product);
+        productRepository.save(product);
+
+        return convertProductToDto(product);
     }
 
     // Delete a product by ID
@@ -55,5 +68,15 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found with id " + productId));
 
         productRepository.delete(product);
+    }
+
+    // Utility method to convert Product entity to ProductDto
+    private ProductDto convertProductToDto(Product product) {
+        ProductDto productDto = new ProductDto();
+        productDto.setId(product.getId());
+        productDto.setName(product.getName());
+        productDto.setPrice(product.getPrice());
+        productDto.setStock(product.getStock());
+        return productDto;
     }
 }

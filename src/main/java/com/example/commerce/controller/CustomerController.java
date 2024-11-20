@@ -1,6 +1,6 @@
 package com.example.commerce.controller;
 
-import com.example.commerce.model.Customer;
+import com.example.commerce.dto.CustomerDto;
 import com.example.commerce.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,14 +21,14 @@ public class CustomerController {
     }
 
     @PostMapping("/addcustomer")
-    public ResponseEntity<Customer> addCustomer(@RequestBody Customer customer) {
-        Customer savedCustomer = customerService.addCustomer(customer);
+    public ResponseEntity<CustomerDto> addCustomer(@RequestBody CustomerDto customerDto) {
+        CustomerDto savedCustomer = customerService.addCustomer(customerDto);
         return new ResponseEntity<>(savedCustomer, HttpStatus.CREATED);
     }
 
     @GetMapping("/all")  // Custom path for getting all customers
-    public ResponseEntity<List<Customer>> getAllCustomers() {
-        List<Customer> customers = customerService.getAllCustomers();
+    public ResponseEntity<List<CustomerDto>> getAllCustomers() {
+        List<CustomerDto> customers = customerService.getAllCustomers();
         return new ResponseEntity<>(customers, HttpStatus.OK);
     }
 }

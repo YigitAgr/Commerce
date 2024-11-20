@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,4 +30,6 @@ public class Order extends BaseEntity {
 
     private Double totalPrice;
     private String orderStatus;  // Example statuses: "PLACED", "SHIPPED", "DELIVERED"
+
+    private LocalDateTime orderDate;
 }

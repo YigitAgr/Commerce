@@ -1,6 +1,6 @@
 package com.example.commerce.controller;
 
-import com.example.commerce.model.Product;
+import com.example.commerce.dto.ProductDto;
 import com.example.commerce.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,29 +22,29 @@ public class ProductController {
 
     // Add a new product
     @PostMapping("/add")
-    public ResponseEntity<Product> addProduct(@RequestBody Product product) {
-        Product savedProduct = productService.addProduct(product);
+    public ResponseEntity<ProductDto> addProduct(@RequestBody ProductDto productDto) {
+        ProductDto savedProduct = productService.addProduct(productDto);
         return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
     }
 
     // Get a product by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProduct(@PathVariable("id") Long productId) {
-        Product product = productService.getProduct(productId);
+    public ResponseEntity<ProductDto> getProduct(@PathVariable("id") Long productId) {
+        ProductDto product = productService.getProduct(productId);
         return new ResponseEntity<>(product, HttpStatus.OK);
     }
 
     // Get all products
     @GetMapping("/")
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
+    public ResponseEntity<List<ProductDto>> getAllProducts() {
+        List<ProductDto> products = productService.getAllProducts();
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     // Update a product by ID
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable("id") Long productId, @RequestBody Product productDetails) {
-        Product updatedProduct = productService.updateProduct(productId, productDetails);
+    public ResponseEntity<ProductDto> updateProduct(@PathVariable("id") Long productId, @RequestBody ProductDto productDetails) {
+        ProductDto updatedProduct = productService.updateProduct(productId, productDetails);
         return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
     }
 
