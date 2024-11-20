@@ -1,7 +1,7 @@
 package com.example.commerce.service;
 
+import com.example.commerce.converters.CustomerConventer;
 import com.example.commerce.dto.CustomerDto;
-import com.example.commerce.model.Cart;
 import com.example.commerce.model.Customer;
 import com.example.commerce.repository.CustomerRepository;
 import com.example.commerce.repository.CartRepository;
@@ -18,6 +18,9 @@ public class CustomerService {
     private final CartRepository cartRepository;
 
     @Autowired
+    private CustomerConventer customerConventer;
+
+    @Autowired
     public CustomerService(CustomerRepository customerRepository, CartRepository cartRepository) {
         this.customerRepository = customerRepository;
         this.cartRepository = cartRepository;
@@ -26,37 +29,17 @@ public class CustomerService {
     @Transactional
     // Add a new customer
     public CustomerDto addCustomer(CustomerDto customerDto) {
-        // Convert CustomerDto to Customer entity
-        Customer customer = new Customer();
-        customer.setName(customerDto.getName());
-        customer.setEmail(customerDto.getEmail());
-        // Add other fields as needed
-
-        // Save the customer to the database
+        Customer customer = customerConventer.convertDtoToCustomer(customerDto);
         Customer savedCustomer = customerRepository.save(customer);
+        return customerConventer.convertCustomerToDto(savedCustomer);
 
-        // Convert saved Customer entity back to CustomerDto
-        CustomerDto savedCustomerDto = new CustomerDto();
-        savedCustomerDto.setId(savedCustomer.getId());
-        savedCustomerDto.setName(savedCustomer.getName());
-        savedCustomerDto.setEmail(savedCustomer.getEmail());
-
-        return savedCustomerDto;
     }
 
     public List<CustomerDto> getAllCustomers() {
         List<Customer> customers = customerRepository.findAll();
         return customers.stream()
-                .map(this::convertCustomerToDto)
+                .map(customerConventer::convertCustomerToDto)
                 .toList();
     }
 
-    // Utility method to convert Customer entity to CustomerDto
-    private CustomerDto convertCustomerToDto(Customer customer) {
-        CustomerDto customerDto = new CustomerDto();
-        customerDto.setId(customer.getId());
-        customerDto.setName(customer.getName());
-        customerDto.setEmail(customer.getEmail());
-        return customerDto;
-    }
 }

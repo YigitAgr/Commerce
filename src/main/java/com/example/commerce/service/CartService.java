@@ -12,6 +12,7 @@ import com.example.commerce.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.example.commerce.converters.CartConventer;
 
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +34,9 @@ public class CartService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private CartConventer cartConventer;
 
     public CartDto addProductToCart(Long customerId, Long productId, int quantity) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
@@ -65,7 +69,7 @@ public class CartService {
         cartRepository.save(cart);
 
         // Convert the Cart entity to a DTO and return
-        return convertCartToDto(cart);
+        return cartConventer.convertCartToDto(cart);
     }
 
     public CartDto deleteProductFromCart(Long customerId, Long productId) {
@@ -90,7 +94,7 @@ public class CartService {
         cartRepository.save(cart);
 
         // Convert the Cart entity to a DTO and return
-        return convertCartToDto(cart);
+        return cartConventer.convertCartToDto(cart);
     }
 
     public CartDto updateCart(Long customerId, Long productId, int quantity) {
@@ -124,7 +128,7 @@ public class CartService {
         cartRepository.save(cart);
 
         // Convert the Cart entity to a DTO and return
-        return convertCartToDto(cart);
+        return cartConventer.convertCartToDto(cart);
     }
 
     public CartDto emptyCart(Long customerId) {
@@ -146,7 +150,7 @@ public class CartService {
         cartRepository.save(cart);
 
         // Convert the Cart entity to a DTO and return
-        return convertCartToDto(cart);
+        return cartConventer.convertCartToDto(cart);
     }
 
     @Transactional
@@ -233,28 +237,9 @@ public class CartService {
             throw new IllegalArgumentException("Cart not found for customer.");
         }
 
-        return convertCartToDto(cart);
+        return cartConventer.convertCartToDto(cart);
     }
 
-    // Utility method to convert Cart entity to CartDto
-    private CartDto convertCartToDto(Cart cart) {
-        CartDto cartDto = new CartDto();
-        cartDto.setId(cart.getId());
-        cartDto.setCustomerId(cart.getCustomer().getId());
-        cartDto.setTotalPrice(cart.getTotalPrice());
-
-        Set<CartItemDto> itemDtos = new HashSet<>();
-        for (CartItem cartItem : cart.getItems()) {
-            CartItemDto itemDto = new CartItemDto();
-            itemDto.setProductId(cartItem.getProduct().getId());
-            itemDto.setQuantity(cartItem.getQuantity());
-            itemDto.setPriceAtTimeOfAdd(cartItem.getPriceAtTimeOfAdd());
-            itemDtos.add(itemDto);
-        }
-
-        cartDto.setItems(itemDtos);
-        return cartDto;
-    }
 
     // Get order history for a customer (returns List<OrderDto>)
     public List<OrderDto> getOrderHistory(Long customerId) {

@@ -1,5 +1,6 @@
 package com.example.commerce.service;
 
+import com.example.commerce.converters.ProductConventer;
 import com.example.commerce.dto.ProductDto;
 import com.example.commerce.model.Product;
 import com.example.commerce.repository.ProductRepository;
@@ -15,6 +16,9 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     @Autowired
+    private ProductConventer productConventer;
+
+    @Autowired
     public ProductService(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
@@ -28,14 +32,14 @@ public class ProductService {
         productRepository.save(product);
 
         // Return the saved product as a DTO
-        return convertProductToDto(product);
+        return productConventer.convertProductToDto(product);
     }
 
     // Get a product by ID
     public ProductDto getProduct(Long productId) {
         Optional<Product> product = productRepository.findById(productId);
         if (product.isPresent()) {
-            return convertProductToDto(product.get());
+            return productConventer.convertProductToDto(product.get());
         }
         throw new RuntimeException("Product not found with id " + productId);
     }
@@ -44,7 +48,7 @@ public class ProductService {
     public List<ProductDto> getAllProducts() {
         List<Product> products = productRepository.findAll();
         return products.stream()
-                .map(this::convertProductToDto)
+                .map(productConventer::convertProductToDto)
                 .toList();
     }
 
@@ -59,7 +63,7 @@ public class ProductService {
 
         productRepository.save(product);
 
-        return convertProductToDto(product);
+        return productConventer.convertProductToDto(product);
     }
 
     // Delete a product by ID
@@ -70,13 +74,4 @@ public class ProductService {
         productRepository.delete(product);
     }
 
-    // Utility method to convert Product entity to ProductDto
-    private ProductDto convertProductToDto(Product product) {
-        ProductDto productDto = new ProductDto();
-        productDto.setId(product.getId());
-        productDto.setName(product.getName());
-        productDto.setPrice(product.getPrice());
-        productDto.setStock(product.getStock());
-        return productDto;
-    }
 }
