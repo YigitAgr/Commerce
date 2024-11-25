@@ -14,13 +14,12 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductConventer productConventer;  // Field injection replaced with constructor injection
 
     @Autowired
-    private ProductConventer productConventer;
-
-    @Autowired
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, ProductConventer productConventer) {
         this.productRepository = productRepository;
+        this.productConventer = productConventer;  // Proper injection via constructor
     }
 
     // Add a new product
@@ -73,5 +72,4 @@ public class ProductService {
 
         productRepository.delete(product);
     }
-
 }

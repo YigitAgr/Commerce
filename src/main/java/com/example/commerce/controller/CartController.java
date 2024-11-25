@@ -15,8 +15,13 @@ import java.util.List;
 @RequestMapping("/api/cart")
 public class CartController {
 
+    private final CartService cartService;  // Constructor Injection
+
+    // Constructor Injection
     @Autowired
-    private CartService cartService;
+    public CartController(CartService cartService) {
+        this.cartService = cartService;
+    }
 
     @PostMapping("/add/{customerId}/{productId}")
     public ResponseEntity<CartDto> addProductToCart(@PathVariable Long customerId,
@@ -58,8 +63,6 @@ public class CartController {
         }
     }
 
-
-
     @GetMapping("/get/{customerId}")
     public ResponseEntity<CartDto> getCart(@PathVariable Long customerId) {
         try {
@@ -90,3 +93,4 @@ public class CartController {
         }
     }
 }
+
